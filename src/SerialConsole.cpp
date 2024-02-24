@@ -46,6 +46,13 @@ SerialConsole::SerialConsole() : StreamAPI(&Port), RedirectablePrint(&Port), con
     Port.setRX(SERIAL2_RX);
 #endif
     Port.begin(SERIAL_BAUD);
+#if defined(CONFIG_IDF_TARGET_ESP32C3) && defined(ARDUINO_USB_CDC_ON_BOOT)
+    // When using a ESP32C3 with USB_CDC_ON_BOOT defined then explicitly define a TxTimout otherwise
+    // there is a delay on every write() while the USB Port is not connected
+    // Should be addressed by https://github.com/espressif/arduino-esp32/pull/9307
+    Port.setTxTimeoutMs(1);
+#endif
+
 #if defined(ARCH_NRF52) || defined(CONFIG_IDF_TARGET_ESP32S2) || defined(CONFIG_IDF_TARGET_ESP32S3) || defined(ARCH_RP2040) ||   \
     defined(CONFIG_IDF_TARGET_ESP32C3) || defined(CONFIG_IDF_TARGET_ESP32C6)
     time_t timeout = millis();
