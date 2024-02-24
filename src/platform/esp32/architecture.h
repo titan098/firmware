@@ -139,6 +139,8 @@
 #define HW_VENDOR meshtastic_HardwareModel_STATION_G2
 #elif defined(UNPHONE)
 #define HW_VENDOR meshtastic_HardwareModel_UNPHONE
+#elif defined(MINILORA_V1)
+#define HW_VENDOR meshtastic_HardwareModel_PRIVATE_HW
 #endif
 
 // -----------------------------------------------------------------------------
