@@ -174,6 +174,8 @@
 #define HW_VENDOR meshtastic_HardwareModel_SENSECAP_INDICATOR
 #elif defined(SEEED_XIAO_S3)
 #define HW_VENDOR meshtastic_HardwareModel_SEEED_XIAO_S3
+#elif defined(MINILORA_V1)
+#define HW_VENDOR meshtastic_HardwareModel_PRIVATE_HW
 #endif
 
 // -----------------------------------------------------------------------------
