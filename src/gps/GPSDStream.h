@@ -12,6 +12,7 @@ class GPSDStream : public Stream
     ~GPSDStream();
 
     bool open(const char *host, const char *port);
+    bool close(void);
 
     int available();
     int read();
@@ -26,6 +27,9 @@ class GPSDStream : public Stream
 
   private:
     void refresh();
+
+    String _host;
+    String _port;
 
     gpsmm *_gpsd = nullptr;
     struct gps_data_t *_gps_data = nullptr;

@@ -12,6 +12,7 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     libbluetooth-dev \
     libgpiod-dev \
     libgps-dev \
+    libi2c-dev \
     liborcania-dev \
     libssl-dev \
     libulfius-dev \
