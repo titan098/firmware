@@ -434,7 +434,15 @@ bool loadConfig(const char *configPath)
             settingsMap[user] = yamlConfig["GPIO"]["User"].as<int>(RADIOLIB_NC);
         }
         if (yamlConfig["GPS"]) {
+            std::string gpsdHost = yamlConfig["GPS"]["GPSDHost"].as<std::string>("");
             std::string serialPath = yamlConfig["GPS"]["SerialPath"].as<std::string>("");
+
+            if (gpsdHost != "") {
+                serialPath = "";
+                settingsStrings[gpsd_host] = gpsdHost;
+                settingsMap[has_gps] = 1;
+            }
+
             if (serialPath != "") {
                 Serial1.setPath(serialPath);
                 settingsMap[has_gps] = 1;

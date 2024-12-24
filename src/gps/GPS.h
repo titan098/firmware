@@ -11,6 +11,10 @@
 #include "input/UpDownInterruptImpl1.h"
 #include "modules/PositionModule.h"
 
+#ifdef USE_GPSD
+#include "GPSDStream.h"
+#endif
+
 // Allow defining the polarity of the ENABLE output.  default is active high
 #ifndef GPS_EN_ACTIVE
 #define GPS_EN_ACTIVE 1
@@ -29,7 +33,8 @@ typedef enum {
     GNSS_MODEL_MTK_L76B,
     GNSS_MODEL_MTK_PA1616S,
     GNSS_MODEL_AG3335,
-    GNSS_MODEL_AG3352
+    GNSS_MODEL_AG3352,
+    GNSS_MODEL_GPSD,
 } GnssModel_t;
 
 typedef enum {
@@ -185,6 +190,8 @@ class GPS : private concurrency::OSThread
     /** If !NULL we will use this serial port to construct our GPS */
 #if defined(ARCH_RP2040)
     static SerialUART *_serial_gps;
+#elif defined(ARCH_PORTDUINO) && defined(USE_GPSD)
+    static GPSDStream *_serial_gps;
 #else
     static HardwareSerial *_serial_gps;
 #endif

@@ -34,10 +34,12 @@ template <typename T, std::size_t N> std::size_t array_count(const T (&)[N])
     return N;
 }
 
-#if defined(NRF52840_XXAA) || defined(NRF52833_XXAA) || defined(ARCH_ESP32) || defined(ARCH_PORTDUINO)
+#if defined(NRF52840_XXAA) || defined(NRF52833_XXAA) || defined(ARCH_ESP32) || (defined(ARCH_PORTDUINO) && !defined(USE_GPSD))
 HardwareSerial *GPS::_serial_gps = &Serial1;
 #elif defined(ARCH_RP2040)
 SerialUART *GPS::_serial_gps = &Serial1;
+#elif defined(ARCH_PORTDUINO) && defined(USE_GPSD)
+GPSDStream *GPS::_serial_gps = new GPSDStream();
 #else
 HardwareSerial *GPS::_serial_gps = nullptr;
 #endif
@@ -1138,7 +1140,7 @@ static const char *DETECTED_MESSAGE = "%s detected, using %s Module";
 
 GnssModel_t GPS::probe(int serialSpeed)
 {
-#if defined(ARCH_NRF52) || defined(ARCH_PORTDUINO) || defined(ARCH_STM32WL)
+#if (defined(ARCH_NRF52) || defined(ARCH_PORTDUINO) || defined(ARCH_STM32WL))
     _serial_gps->end();
     _serial_gps->begin(serialSpeed);
 #elif defined(ARCH_RP2040)
@@ -1149,6 +1151,12 @@ GnssModel_t GPS::probe(int serialSpeed)
     if (_serial_gps->baudRate() != serialSpeed) {
         LOG_DEBUG("Set Baud to %i", serialSpeed);
         _serial_gps->updateBaudRate(serialSpeed);
+    }
+#endif
+
+#if defined(ARCH_PORTDUINO)
+    if (settingsStrings[gpsd_host] != "") {
+        return GNSS_MODEL_GPSD;
     }
 #endif
 
@@ -1309,6 +1317,13 @@ GPS *GPS::createGps()
 #ifdef ARCH_PORTDUINO
     if (!settingsMap[has_gps])
         return nullptr;
+
+#if defined(USE_GPSD)
+    if (settingsStrings[gpsd_host] != "") {
+        GPS::_serial_gps->open(settingsStrings[gpsd_host].c_str(), DEFAULT_GPSD_PORT);
+    }
+#endif
+
 #endif
     if (!_rx_gpio || !_serial_gps) // Configured to have no GPS at all
         return nullptr;
@@ -1527,8 +1542,12 @@ bool GPS::lookForLocation()
     // At a minimum, use the fixQuality indicator in GPGGA (FIXME?)
     fixQual = reader.fixQuality();
 
-#ifndef TINYGPS_OPTION_NO_STATISTICS
-    if (reader.failedChecksum() > lastChecksumFailCount) {
+#if !defined(TINYGPS_OPTION_NO_STATISTICS)
+    bool reportErrors = reader.failedChecksum() > lastChecksumFailCount;
+#if defined(ARCH_PORTDUINO) && defined(USE_GPSD)
+    reportErrors = settingsStrings[gpsd_host] == "";
+#endif
+    if (reportErrors) {
         LOG_WARN("%u new GPS checksum failures, for a total of %u", reader.failedChecksum() - lastChecksumFailCount,
                  reader.failedChecksum());
         lastChecksumFailCount = reader.failedChecksum();

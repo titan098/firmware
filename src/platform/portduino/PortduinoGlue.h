@@ -30,6 +30,7 @@ enum configNames {
     spiSpeed,
     i2cdev,
     has_gps,
+    gpsd_host,
     touchscreenModule,
     touchscreenCS,
     touchscreenIRQ,
