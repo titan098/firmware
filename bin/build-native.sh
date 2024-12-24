@@ -13,6 +13,11 @@ platformioFailed() {
 	exit 1
 }
 
+BUILD_ENV="native"
+if [ ! -z "$1" ]; then
+	BUILD_ENV="native-$1"
+fi
+
 VERSION=$(bin/buildinfo.py long)
 SHORT_VERSION=$(bin/buildinfo.py short)
 
@@ -24,7 +29,7 @@ mkdir -p $OUTDIR/
 rm -r $OUTDIR/* || true
 
 # Important to pull latest version of libs into all device flavors, otherwise some devices might be stale
-pio pkg update --environment native || platformioFailed
-pio run --environment native || platformioFailed
+pio pkg update --environment ${BUILD_ENV} || platformioFailed
+pio run --environment ${BUILD_ENV} || platformioFailed
 cp .pio/build/native/program "$OUTDIR/meshtasticd_linux_$(uname -m)"
 cp bin/native-install.* $OUTDIR
