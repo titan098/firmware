@@ -1,6 +1,7 @@
-#include "GPSDStream.h"
+#include "configuration.h"
 
-#include <libgpsmm.h>
+#if defined(USE_GPSD)
+#include "GPSDStream.h"
 
 GPSDStream::~GPSDStream()
 {
@@ -55,7 +56,7 @@ void GPSDStream::refresh()
         open(_host.c_str(), _port.c_str());
     }
 
-    bool must_refresh = (_last_refresh - millis()) > 30000;
+    bool must_refresh = (_last_refresh - millis()) > MAX_REFRESH_TIME;
 
     if (!must_refresh && _buffer.length() > 0) {
         return;
@@ -96,3 +97,10 @@ int GPSDStream::peek()
     }
     return 0;
 }
+
+bool GPSDStream::is_open()
+{
+    return _gpsd->is_open();
+}
+
+#endif

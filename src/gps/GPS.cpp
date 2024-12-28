@@ -34,14 +34,16 @@ template <typename T, std::size_t N> std::size_t array_count(const T (&)[N])
     return N;
 }
 
-#if defined(NRF52840_XXAA) || defined(NRF52833_XXAA) || defined(ARCH_ESP32) || (defined(ARCH_PORTDUINO) && !defined(USE_GPSD))
+#if defined(NRF52840_XXAA) || defined(NRF52833_XXAA) || defined(ARCH_ESP32) || defined(ARCH_PORTDUINO)
 HardwareSerial *GPS::_serial_gps = &Serial1;
 #elif defined(ARCH_RP2040)
 SerialUART *GPS::_serial_gps = &Serial1;
-#elif defined(ARCH_PORTDUINO) && defined(USE_GPSD)
-GPSDStream *GPS::_serial_gps = new GPSDStream();
 #else
 HardwareSerial *GPS::_serial_gps = nullptr;
+#endif
+
+#if defined(ARCH_PORTDUINO) && defined(USE_GPSD)
+GPSDStream *GPS::_gpsd = new GPSDStream();
 #endif
 
 GPS *gps = nullptr;
@@ -1319,8 +1321,9 @@ GPS *GPS::createGps()
         return nullptr;
 
 #if defined(USE_GPSD)
-    if (settingsStrings[gpsd_host] != "") {
-        GPS::_serial_gps->open(settingsStrings[gpsd_host].c_str(), DEFAULT_GPSD_PORT);
+    if (settingsMap[use_gpsd] == 1) {
+        GPS::_gpsd->open(settingsStrings[gpsd_host].c_str(), settingsStrings[gpsd_port].c_str());
+        GPS::_serial_gps = new GPSDGlue(GPS::_gpsd);
     }
 #endif
 
@@ -1544,8 +1547,8 @@ bool GPS::lookForLocation()
 
 #if !defined(TINYGPS_OPTION_NO_STATISTICS)
     bool reportErrors = reader.failedChecksum() > lastChecksumFailCount;
-#if defined(ARCH_PORTDUINO) && defined(USE_GPSD)
-    reportErrors = settingsStrings[gpsd_host] == "";
+#if defined(ARCH_PORTDUINO)
+    reportErrors = !(settingsMap[use_gpsd] == 1);
 #endif
     if (reportErrors) {
         LOG_WARN("%u new GPS checksum failures, for a total of %u", reader.failedChecksum() - lastChecksumFailCount,

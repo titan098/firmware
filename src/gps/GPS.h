@@ -11,7 +11,8 @@
 #include "input/UpDownInterruptImpl1.h"
 #include "modules/PositionModule.h"
 
-#ifdef USE_GPSD
+#if defined(ARCH_PORTDUINO) && defined(USE_GPSD)
+#include "GPSDGlue.h"
 #include "GPSDStream.h"
 #endif
 
@@ -190,10 +191,12 @@ class GPS : private concurrency::OSThread
     /** If !NULL we will use this serial port to construct our GPS */
 #if defined(ARCH_RP2040)
     static SerialUART *_serial_gps;
-#elif defined(ARCH_PORTDUINO) && defined(USE_GPSD)
-    static GPSDStream *_serial_gps;
 #else
     static HardwareSerial *_serial_gps;
+#endif
+
+#if defined(ARCH_PORTDUINO) && defined(USE_GPSD)
+    static GPSDStream *_gpsd;
 #endif
 
     // Create a ublox packet for editing in memory
