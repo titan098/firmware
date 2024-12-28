@@ -1546,11 +1546,7 @@ bool GPS::lookForLocation()
     fixQual = reader.fixQuality();
 
 #if !defined(TINYGPS_OPTION_NO_STATISTICS)
-    bool reportErrors = reader.failedChecksum() > lastChecksumFailCount;
-#if defined(ARCH_PORTDUINO)
-    reportErrors = !(settingsMap[use_gpsd] == 1);
-#endif
-    if (reportErrors) {
+    if (reader.failedChecksum() > lastChecksumFailCount) {
         LOG_WARN("%u new GPS checksum failures, for a total of %u", reader.failedChecksum() - lastChecksumFailCount,
                  reader.failedChecksum());
         lastChecksumFailCount = reader.failedChecksum();

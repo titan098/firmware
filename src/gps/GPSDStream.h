@@ -2,6 +2,8 @@
 #include "configuration.h"
 
 #if defined(USE_GPSD)
+#include <ctime>
+#include <iomanip>
 #include <libgpsmm.h>
 
 #include "Stream.h"
@@ -22,6 +24,12 @@ class GPSDStream : public Stream
     uint32_t _last_refresh = 0;
 
     String _buffer;
+
+    String lat_to_nmea(double lat);
+    String lon_to_nmea(double lon);
+    uint8_t nmea_checksum(const char *sentence);
+    String to_nmea_time(timespec_t gpsd_time);
+    String to_nmea_date(timespec_t gpsd_time);
 
   public:
     GPSDStream(){};
