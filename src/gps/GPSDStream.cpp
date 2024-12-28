@@ -43,7 +43,7 @@ bool GPSDStream::close(void)
         delete _gpsd;
         _gpsd = nullptr;
         _gps_buffer = nullptr;
-        _last_refresh = 0;
+        _last_refresh = millis();
         _buffer = String("");
     }
 }
@@ -52,24 +52,28 @@ void GPSDStream::refresh()
 {
     // if we aren't open then close the existing connection and reopen it
     if (_gpsd == nullptr || !_gpsd->is_open()) {
+        LOG_WARN("GPSD stream is not open, closing and reopening...");
         close();
         open(_host.c_str(), _port.c_str());
     }
 
-    bool must_refresh = (_last_refresh - millis()) > MAX_REFRESH_TIME;
-
-    if (!must_refresh && _buffer.length() > 0) {
-        return;
+    if ((millis() - _last_refresh) >= MAX_REFRESH_TIME) {
+        LOG_DEBUG("GPSD stream hasn't been requested in %d seconds, refreshing...", MAX_REFRESH_TIME / 1000);
+        _buffer = String("");
     }
 
-    _buffer = String("");
-    if ((_gps_data = _gpsd->read()) == nullptr) {
-        _gps_buffer = nullptr;
-        return;
+    if (_buffer.length() == 0) {
+        if ((_gps_data = _gpsd->read()) == nullptr) {
+            _gps_buffer = nullptr;
+            return;
+        }
+
+        // get the next batch of data and append to the stream. If we keep appending then it will never
+        // finish consuming the buffer.
+        _last_refresh = millis();
+        _gps_buffer = _gpsd->data();
+        _buffer = String(_gps_buffer);
     }
-    _last_refresh = millis();
-    _gps_buffer = _gpsd->data();
-    _buffer = String(_gps_buffer);
 }
 
 int GPSDStream::available()
@@ -80,8 +84,7 @@ int GPSDStream::available()
 
 int GPSDStream::read()
 {
-    available();
-    if (_buffer.length() > 0) {
+    if (available() > 0) {
         int ret = _buffer[0];
         _buffer = _buffer.substring(1);
         return ret;
@@ -91,8 +94,7 @@ int GPSDStream::read()
 
 int GPSDStream::peek()
 {
-    available();
-    if (_buffer.length() > 0) {
+    if (available() > 0) {
         return _buffer[0];
     }
     return 0;

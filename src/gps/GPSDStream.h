@@ -6,7 +6,7 @@
 
 #include "Stream.h"
 
-#define MAX_REFRESH_TIME 30000;
+#define MAX_REFRESH_TIME 30000
 
 class GPSDStream : public Stream
 {
