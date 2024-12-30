@@ -11,7 +11,7 @@
 #include "input/UpDownInterruptImpl1.h"
 #include "modules/PositionModule.h"
 
-#if defined(ARCH_PORTDUINO) && defined(USE_GPSD)
+#if defined(USE_GPSD)
 #include "GPSDGlue.h"
 #include "GPSDStream.h"
 #endif
@@ -195,7 +195,7 @@ class GPS : private concurrency::OSThread
     static HardwareSerial *_serial_gps;
 #endif
 
-#if defined(ARCH_PORTDUINO) && defined(USE_GPSD)
+#if defined(USE_GPSD)
     static GPSDStream *_gpsd;
 #endif
 

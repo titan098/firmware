@@ -8,7 +8,8 @@
 
 #include "Stream.h"
 
-#define MAX_REFRESH_TIME 30000
+#define MAX_REFRESH_TIME 120000
+#define CONNECTION_RETRIES 10
 
 class GPSDStream : public Stream
 {
@@ -17,6 +18,7 @@ class GPSDStream : public Stream
 
     String _host;
     String _port;
+    int _connection_retries = 0;
 
     gpsmm *_gpsd = nullptr;
     struct gps_data_t *_gps_data = nullptr;
@@ -36,7 +38,7 @@ class GPSDStream : public Stream
     ~GPSDStream();
 
     bool open(const char *host, const char *port);
-    bool close(void);
+    void close();
 
     int available();
     int read();

@@ -1142,7 +1142,7 @@ static const char *DETECTED_MESSAGE = "%s detected, using %s Module";
 
 GnssModel_t GPS::probe(int serialSpeed)
 {
-#if (defined(ARCH_NRF52) || defined(ARCH_PORTDUINO) || defined(ARCH_STM32WL))
+#if defined(ARCH_NRF52) || defined(ARCH_PORTDUINO) || defined(ARCH_STM32WL)
     _serial_gps->end();
     _serial_gps->begin(serialSpeed);
 #elif defined(ARCH_RP2040)
@@ -1156,7 +1156,7 @@ GnssModel_t GPS::probe(int serialSpeed)
     }
 #endif
 
-#if defined(ARCH_PORTDUINO)
+#if defined(ARCH_PORTDUINO) && defined(USE_GPSD)
     if (settingsStrings[gpsd_host] != "") {
         return GNSS_MODEL_GPSD;
     }
@@ -1326,7 +1326,6 @@ GPS *GPS::createGps()
         GPS::_serial_gps = new GPSDGlue(GPS::_gpsd);
     }
 #endif
-
 #endif
     if (!_rx_gpio || !_serial_gps) // Configured to have no GPS at all
         return nullptr;
@@ -1545,7 +1544,7 @@ bool GPS::lookForLocation()
     // At a minimum, use the fixQuality indicator in GPGGA (FIXME?)
     fixQual = reader.fixQuality();
 
-#if !defined(TINYGPS_OPTION_NO_STATISTICS)
+#ifndef TINYGPS_OPTION_NO_STATISTICS
     if (reader.failedChecksum() > lastChecksumFailCount) {
         LOG_WARN("%u new GPS checksum failures, for a total of %u", reader.failedChecksum() - lastChecksumFailCount,
                  reader.failedChecksum());

@@ -27,45 +27,57 @@ bool GPSDStream::open(const char *host, const char *port)
     // create a new gpsmm object and open the stream for reading NMEA sentences
     _gpsd = new gpsmm(_host.c_str(), _port.c_str());
     if (_gpsd->stream(WATCH_ENABLE | WATCH_JSON) == nullptr) {
-        LOG_ERROR("Failed to open gpsd stream on %s:%s", host, port);
+        _connection_retries++;
+        LOG_ERROR("Failed to open gpsd stream on %s:%s. Retries: %d", host, port, _connection_retries);
 
         delete _gpsd;
         _gpsd = nullptr;
+        return false;
     };
     LOG_INFO("Connected to gpsd: %s:%s", host, port);
+    _connection_retries = 0;
     return true;
 }
 
-bool GPSDStream::close(void)
+void GPSDStream::close(void)
 {
-    LOG_INFO("Closing gpsd stream");
-    if (_gpsd != nullptr) {
-        delete _gpsd;
-        _gpsd = nullptr;
-        _gps_buffer = nullptr;
-        _last_refresh = millis();
-        _buffer = String("");
+    if (_gpsd == nullptr) {
+        return;
     }
+
+    LOG_DEBUG("Closing gpsd stream");
+    delete _gpsd;
+    _gpsd = nullptr;
+    _gps_buffer = nullptr;
+    _last_refresh = millis();
 }
 
 void GPSDStream::refresh()
 {
-    // if we aren't open then close the existing connection and reopen it
-    if (_gpsd == nullptr || !_gpsd->is_open()) {
-        LOG_WARN("GPSD stream is not open, closing and reopening...");
-        close();
-        open(_host.c_str(), _port.c_str());
+    // just give up if we hit the connection retry limit
+    if (_connection_retries >= CONNECTION_RETRIES) {
+        return;
     }
 
-    // if data hasn't been requested in 30 seconds then clear the buffer
+    // if data hasn't been requested in 30 seconds then clear the buffer and refresh the stream.
+    // this can happen if gpsd has been restarted on the other end.
     if ((millis() - _last_refresh) >= MAX_REFRESH_TIME) {
         LOG_DEBUG("GPSD stream hasn't been requested in %d seconds, refreshing...", MAX_REFRESH_TIME / 1000);
-        _buffer = String("");
+        close();
+        return;
     }
 
-    // if we can't read from gpsd then do not proceed
+    // if we aren't open then close the existing connection and reopen it
+    if (_gpsd == nullptr || !_gpsd->is_open()) {
+        LOG_WARN("GPSD stream is not open, retrying...");
+        close();
+        if (!open(_host.c_str(), _port.c_str())) {
+            return;
+        }
+    }
+
+    // if we can't read from gpsd - no new data may have appeared on the stream
     if ((_gps_data = _gpsd->read()) == nullptr) {
-        _gps_buffer = nullptr;
         return;
     }
 
