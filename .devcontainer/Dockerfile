@@ -12,9 +12,12 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     git \
     libbluetooth-dev \
     libgpiod-dev \
+    libgps-dev \
+    libi2c-dev \
     liborcania-dev \
     libssl-dev \
     libulfius-dev \
+    libusb-1.0-0-dev \
     libyaml-cpp-dev \
     pipx \
     pkg-config \

@@ -501,10 +501,22 @@ bool loadConfig(const char *configPath)
             settingsMap[user] = yamlConfig["GPIO"]["User"].as<int>(RADIOLIB_NC);
         }
         if (yamlConfig["GPS"]) {
+            std::string gpsdHost = yamlConfig["GPS"]["GpsdHost"].as<std::string>("");
+            std::string gpsdPort = yamlConfig["GPS"]["GpsdPort"].as<std::string>("2947");
             std::string serialPath = yamlConfig["GPS"]["SerialPath"].as<std::string>("");
+
+            if (gpsdHost != "") {
+                serialPath = "";
+                settingsStrings[gpsd_host] = gpsdHost;
+                settingsStrings[gpsd_port] = gpsdPort;
+                settingsMap[has_gps] = 1;
+                settingsMap[use_gpsd] = 1;
+            }
+
             if (serialPath != "") {
                 Serial1.setPath(serialPath);
                 settingsMap[has_gps] = 1;
+                settingsMap[use_gpsd] = 0;
             }
         }
         if (yamlConfig["I2C"]) {

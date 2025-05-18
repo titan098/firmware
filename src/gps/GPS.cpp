@@ -39,7 +39,7 @@ template <typename T, std::size_t N> std::size_t array_count(const T (&)[N])
     return N;
 }
 
-#if defined(NRF52840_XXAA) || defined(NRF52833_XXAA) || defined(ARCH_ESP32) || defined(ARCH_PORTDUINO)
+#if defined(NRF52840_XXAA) || defined(NRF52833_XXAA) || defined(ARCH_ESP32) || (defined(ARCH_PORTDUINO) && !defined(USE_GPSD))
 #if defined(RAK2560)
 HardwareSerial *GPS::_serial_gps = &Serial2;
 #else
@@ -49,6 +49,10 @@ HardwareSerial *GPS::_serial_gps = &Serial1;
 SerialUART *GPS::_serial_gps = &Serial1;
 #else
 HardwareSerial *GPS::_serial_gps = nullptr;
+#endif
+
+#if defined(ARCH_PORTDUINO) && defined(USE_GPSD)
+GPSDStream *GPS::_gpsd = new GPSDStream();
 #endif
 
 GPS *gps = nullptr;
@@ -1212,6 +1216,12 @@ GnssModel_t GPS::probe(int serialSpeed)
     }
 #endif
 
+#if defined(ARCH_PORTDUINO) && defined(USE_GPSD)
+    if (settingsStrings[gpsd_host] != "") {
+        return GNSS_MODEL_GPSD;
+    }
+#endif
+
     memset(&ublox_info, 0, sizeof(ublox_info));
     uint8_t buffer[768] = {0};
     delay(100);
@@ -1408,6 +1418,13 @@ GPS *GPS::createGps()
 #ifdef ARCH_PORTDUINO
     if (!settingsMap[has_gps])
         return nullptr;
+
+#if defined(USE_GPSD)
+    if (settingsMap[use_gpsd] == 1) {
+        GPS::_gpsd->open(settingsStrings[gpsd_host].c_str(), settingsStrings[gpsd_port].c_str());
+        GPS::_serial_gps = new GPSDGlue(GPS::_gpsd);
+    }
+#endif
 #endif
     if (!_rx_gpio || !_serial_gps) // Configured to have no GPS at all
         return nullptr;
