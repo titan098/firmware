@@ -11,6 +11,11 @@
 #include "input/UpDownInterruptImpl1.h"
 #include "modules/PositionModule.h"
 
+#if defined(USE_GPSD)
+#include "GPSDGlue.h"
+#include "GPSDStream.h"
+#endif
+
 // Allow defining the polarity of the ENABLE output.  default is active high
 #ifndef GPS_EN_ACTIVE
 #define GPS_EN_ACTIVE 1
@@ -40,7 +45,8 @@ typedef enum {
     GNSS_MODEL_AG3335,
     GNSS_MODEL_AG3352,
     GNSS_MODEL_LS20031,
-    GNSS_MODEL_CM121
+    GNSS_MODEL_CM121,
+    GNSS_MODEL_GPSD,
 } GnssModel_t;
 
 typedef enum {
@@ -203,6 +209,10 @@ class GPS : private concurrency::OSThread
     static Uart *_serial_gps;
 #else
     static HardwareSerial *_serial_gps;
+#endif
+
+#if defined(USE_GPSD)
+    static GPSDStream *_gpsd;
 #endif
 
     // Create a ublox packet for editing in memory

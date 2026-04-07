@@ -13,6 +13,11 @@ platformioFailed() {
 	exit 1
 }
 
+BUILD_ENV="native"
+if [ ! -z "$1" ]; then
+	BUILD_ENV="native-$1"
+fi
+
 VERSION=$(bin/buildinfo.py long)
 SHORT_VERSION=$(bin/buildinfo.py short)
 PIO_ENV=${1:-native}

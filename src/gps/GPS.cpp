@@ -52,6 +52,10 @@ SerialUART *GPS::_serial_gps = &GPS_SERIAL_PORT;
 HardwareSerial *GPS::_serial_gps = nullptr;
 #endif
 
+#if defined(ARCH_PORTDUINO) && defined(USE_GPSD)
+GPSDStream *GPS::_gpsd = new GPSDStream();
+#endif
+
 GPS *gps = nullptr;
 
 static GPSUpdateScheduling scheduling;
@@ -1274,6 +1278,13 @@ GnssModel_t GPS::probe(int serialSpeed)
         }
 #endif
 
+#if defined(ARCH_PORTDUINO)
+    if (portduino_config.use_gpsd) {
+        return GNSS_MODEL_GPSD;
+    }
+#endif
+
+
         memset(&ublox_info, 0, sizeof(ublox_info));
         delay(100);
 
@@ -1543,9 +1554,15 @@ GPS *GPS::createGps()
 #ifdef ARCH_PORTDUINO
     if (!portduino_config.has_gps)
         return nullptr;
-#endif
+
+    if (portduino_config.use_gpsd) {
+        GPS::_gpsd->open(portduino_config.gpsd_host.c_str(), portduino_config.gpsd_port.c_str());
+        GPS::_serial_gps = new GPSDGlue(GPS::_gpsd);
+    }
+#else
     if (!_rx_gpio || !_serial_gps) // Configured to have no GPS at all
         return nullptr;
+#endif
 
     GPS *new_gps = new GPS;
     new_gps->rx_gpio = _rx_gpio;

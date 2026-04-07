@@ -731,10 +731,22 @@ bool loadConfig(const char *configPath)
         }
         readGPIOFromYaml(yamlConfig["GPIO"]["User"], portduino_config.userButtonPin);
         if (yamlConfig["GPS"]) {
+            std::string gpsdHost = yamlConfig["GPS"]["GpsdHost"].as<std::string>("");
+            std::string gpsdPort = yamlConfig["GPS"]["GpsdPort"].as<std::string>("2947");
             std::string serialPath = yamlConfig["GPS"]["SerialPath"].as<std::string>("");
+
+            if (gpsdHost != "") {
+                serialPath = "";
+                portduino_config.gpsd_host = gpsdHost;
+                portduino_config.gpsd_port = gpsdPort;
+                portduino_config.has_gps = true;
+                portduino_config.use_gpsd = true;
+            }
+
             if (serialPath != "") {
                 Serial1.setPath(serialPath);
-                portduino_config.has_gps = 1;
+                portduino_config.has_gps = true;
+                portduino_config.use_gpsd = false;
             }
         }
         if (yamlConfig["GPIO"]["ExtraPins"]) {
